@@ -1,0 +1,54 @@
+apple_library(
+  name = 'SBTUITestTunnelCommon',
+  visibility = ['PUBLIC'],
+  swift_version = "5.1",
+  linker_flags = [
+    '-ObjC',
+  ],
+  exported_headers = glob([
+    'Common/*.h',
+  ]),
+  srcs = glob([
+    'Common/**/*.swift',
+    'Common/**/*.m',
+  ]),
+  frameworks = [
+    "$SDKROOT/System/Library/Frameworks/Foundation.framework",
+  ],
+)
+
+apple_library(
+  name = 'SBTUITestTunnelServer',
+  visibility = ['PUBLIC'],
+  linker_flags = [
+    '-ObjC',
+  ],
+  exported_headers = glob([
+    'Server/*.h',
+  ]),
+  srcs = glob([
+    'Server/**/*.m',
+  ]),
+  deps = [":SBTUITestTunnelCommon", "//Example:GCDWebServer"],
+  frameworks = [
+    "$SDKROOT/System/Library/Frameworks/Foundation.framework",
+  ],
+)
+
+apple_library(
+  name = 'SBTUITestTunnelClient',
+  visibility = ['PUBLIC'],
+  linker_flags = [
+    '-ObjC',
+  ],
+  exported_headers = glob([
+    'Client/*.h',
+  ]),
+  srcs = glob([
+    'Client/**/*.m',
+  ]),
+  deps = [":SBTUITestTunnelCommon"],
+  frameworks = [
+    "$SDKROOT/System/Library/Frameworks/Foundation.framework",
+  ],
+)

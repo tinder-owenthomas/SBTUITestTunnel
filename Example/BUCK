@@ -1,0 +1,147 @@
+config = {
+  'PRODUCT_BUNDLE_IDENTIFIER': 'com.tomascamin.SBTUITestTunnel-Example',
+  'CLANG_ENABLE_MODULES' : 'YES',
+  'PROVISIONING_PROFILE_SPECIFIER' : '',
+  'DEVELOPMENT_TEAM' : 'xxx',
+  'ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES' : 'YES',
+  'ONLY_ACTIVE_ARCH' : 'YES',
+  'CODE_SIGN_ENTITLEMENTS' : '',
+  'SWIFT_OPTIMIZATION_LEVEL' : '-Onone',
+  'GCC_OPTIMIZATION_LEVEL' : '0',
+  'VALIDATE_PRODUCT' : 'NO',
+}
+
+test_config = {
+  'PRODUCT_BUNDLE_IDENTIFIER': 'com.subito.SBTUITestTunnel-Tests',
+  'CLANG_ENABLE_MODULES' : 'YES',
+  'PROVISIONING_PROFILE_SPECIFIER' : '',
+  'DEVELOPMENT_TEAM' : 'xxx',
+  'ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES' : 'YES',
+  'ONLY_ACTIVE_ARCH' : 'YES',
+  'CODE_SIGN_ENTITLEMENTS' : '',
+  'SWIFT_OPTIMIZATION_LEVEL' : '-Onone',
+  'GCC_OPTIMIZATION_LEVEL' : '0',
+  'VALIDATE_PRODUCT' : 'NO',
+}
+
+apple_library(
+  name = 'GCDWebServer',
+  visibility = ['PUBLIC'],
+  link_style = 'shared',
+  exported_headers = glob([
+    'Pods/GCDWebServer/GCDWebServer/**/*.h',
+  ]),
+  srcs = glob([
+    'Pods/GCDWebServer/GCDWebServer/**/*.m',
+  ]),
+  frameworks = [
+    "$SDKROOT/System/Library/Frameworks/Foundation.framework",
+  ],
+)
+
+apple_resource(
+    name = 'AppResources',
+    dirs = [],
+    files = glob(['SBTUITestTunnel/**/*.storyboard']),
+)
+
+apple_binary(
+    name = "AppBinary",
+    visibility = [
+        "//App:",
+        "//App/...",
+    ],
+    swift_version = '5',
+    srcs = glob([
+      'SBTUITestTunnel/**/*.m',
+      'SBTUITestTunnel/**/*.swift',
+    ]),
+    deps = [
+        "//Pod:SBTUITestTunnelServer",
+    ],
+    frameworks = [
+      "$SDKROOT/System/Library/Frameworks/UIKit.framework",
+      "$SDKROOT/System/Library/Frameworks/Foundation.framework",
+    ],
+    configs = {
+      'Debug': config,
+      'Development': config,
+      'Profile': config,
+      'Release': config,
+    },
+    tests = [':XCUITests'],
+)
+
+apple_bundle(
+    name = "ExampleApp",
+    visibility = [
+        "//App:",
+    ],
+    extension = "app",
+    binary = ":AppBinary",
+    product_name = "ExampleApp",
+    info_plist = "SBTUITestTunnel/SBTUITestTunnel-Info.plist",
+    deps = [
+      ':AppResources',
+    ]
+)
+
+# A very thin host app to enable running :XCUITests
+apple_bundle(
+    name = "XCUITestsHostApp",
+    visibility = [
+        "//App:XCUITests",
+    ],
+    extension = "app",
+    binary = ":XCUITestsHostAppBinary",
+    product_name = "XCUITestsHostApp",
+    info_plist = "SBTUITestTunnel_Tests/Info.plist",
+)
+
+apple_resource(
+    name = 'TestResources',
+    dirs = [],
+    files = glob(['SBTUITestTunnel_Tests/**/*.json']),
+)
+
+apple_binary(
+    name = "XCUITestsHostAppBinary",
+    visibility = [
+        "//App:XCUITestsHostApp",
+    ],
+    configs = {
+      'Debug': test_config,
+      'Development': test_config,
+      'Profile': test_config,
+      'Release': test_config,
+    },
+    swift_version = '5',
+)
+
+apple_test(
+    name = "XCUITests",
+    destination_specifier = {
+        "name": "iPhone 8",
+    },
+    run_test_separately = True,
+    # The `test_host_app` is launched first in the Simulator and needs to be an `apple_bundle` that is distinct from `ui_test_target_app`.
+    test_host_app = ":XCUITestsHostApp",
+    srcs = glob([
+        "SBTUITestTunnel_Tests/**/*.swift",
+    ]),
+    is_ui_test = True,
+    # The `ui_test_target_app` field is not mentioned in Buck's official documentation, but it appears in its XCUITest fixtures.
+    # https://github.com/facebook/buck/blob/master/test/com/facebook/buck/apple/testdata/apple_test_xcuitest/BUCK.fixture#L66
+    ui_test_target_app = ":ExampleApp",
+    labels = ['ui'],
+    deps = [
+        "//Pod:SBTUITestTunnelClient",
+        ":TestResources",
+    ],    
+    frameworks = [
+        "$PLATFORM_DIR/Developer/Library/Frameworks/XCTest.framework",
+        "$SDKROOT/System/Library/Frameworks/Foundation.framework",
+        "$SDKROOT/System/Library/Frameworks/UIKit.framework",
+    ],
+    info_plist = "SBTUITestTunnel_Tests/Info.plist",
+)
